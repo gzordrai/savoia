@@ -3,7 +3,10 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use tokio::sync::Mutex;
 use zbus::{interface, zvariant::OwnedValue};
+
+use crate::notification::{Notification, Notifications};
 
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -12,12 +15,14 @@ const SPEC_VERSION: &str = "1.2";
 
 pub struct Daemon {
     next_id: AtomicU32,
+    notifications: Mutex<Notifications>,
 }
 
 impl Daemon {
     pub fn new() -> Self {
         Self {
             next_id: AtomicU32::new(1),
+            notifications: Mutex::new(Notifications::new()),
         }
     }
 }
@@ -47,8 +52,11 @@ impl Daemon {
         expire_timeout: i32,
     ) -> u32 {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+        let notification = Notification::builder().build();
 
-        println!("New notification: ({id}) {app_name} {summary}:{body}");
+        println!("New notification {id}");
+
+        self.notifications.lock().await.add(notification);
 
         id
     }

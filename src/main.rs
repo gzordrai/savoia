@@ -1,5 +1,6 @@
 mod daemon;
 mod error;
+mod notification;
 
 use std::time::Duration;
 
